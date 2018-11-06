@@ -9,10 +9,10 @@ library(dplyr)
 
 
 #set wd, load and fortify traffic data
-setwd("C:/Users/camyb/Documents/Capstone/Data")
+setwd("/Users/SpencerPerryman/Desktop/Fall 2018/Capstone")
 
-data <- read.csv("Master Incident List (1).csv", stringsAsFactors = FALSE)
-data_central <- data_central[(data_central$Region == "Central Region"), ]
+data <- read.csv("Master Incident List.csv", stringsAsFactors = FALSE)
+data_central <- data[(data$Region == "Central Region"), ]
 
 #make lon and lat more easily identifiable
 colnames(data_central)[which(colnames(data_central) == "Start.Longitude.Nbr")] <- "Longitude"
@@ -102,4 +102,4 @@ data_by_milemarker <- data_by_time %>%
         day,
         CreatedIncrements)
 
-#test
+#test from spencer fuck
