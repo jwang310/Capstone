@@ -97,8 +97,9 @@ data_by_segment_type <- data_central %>%
        # CreatedIncrements,
         Segment.Type)
 
-data_by_milemarker <- data_by_time %>%
+data_mon <- data_by_time %>%
   count(Milemarker.Nbr,
-        day,
+        day = "Monday",
         CreatedIncrements)
-
+data_mon$prob <- data_mon$n/sum(data_mon$n)
+data_mon
