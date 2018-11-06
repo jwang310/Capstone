@@ -41,67 +41,37 @@ data_central$ClosedHours <- parse_date_time(data_central$ClosedHours, orders = "
 data_central$CreatedIncrements = cut(data_central$CreatedHours, breaks = "60 min")
 
 
-#create dataframe grouping based off of time of day
+#create dataframe grouping based off of time of day, add in weekdays
 data_by_time <- data_central%>% group_by(data_central$CreatedIncrements)
 
 data_by_time$day <- weekdays(as.Date(data_by_time$Created.Dt))
 
+
+#limit to only interstate and primary roadways
 data_by_time <- data_by_time[(data_by_time$Segment.Type == c("Interstate", "Primary")), ]
 
-# 
-# 
-# 
-# #create a data frame based on weekdays 
-# weekDays <- unique(data_by_time$day)
-# 
-# central_byDay <- lapply(1:7, function(x) data_by_time[which(data_by_time$day==weekDays[x]), ])
-# names(central_byDay) <- weekDays
-# 
-# #now take that and expand the data base to include elements based on the time the incident occurred
-# timeBreaks <- sort(unique(data_by_time$CreatedIncrements))
-# timeBreaks
-# central_byDayTime <- central_byDay
-# 
-# y=1
-# for (i in 1:7){
-#   print(y)
-#   central_byDayTime[[i]] <- lapply(1:48, function(x) central_byDayTime[[i]][which(central_byDayTime[[i]]$CreatedIncrements==timeBreaks[x]),])
-#   y=y+1
-# }
-# x <- central_byDayTime[[3]][[3]]
-# 
-# #now do it by road
-# roadBreaks <- sort(unique(data_by_time$Route.Nm))
-# roadBreaks
-# central_byDayTimeRoad <- central_byDayTime
-# 
-# y=1
-# for (i in 1:7){
-#   for(j in 1:48){
-#   print(y)
-#   central_byDayTimeRoad[[i]][[j]] <- lapply(1:197, function(x) central_byDayTimeRoad[[i]][[j]][which(central_byDayTimeRoad[[i]][[j]]$Route.Nm==roadBreaks[x]),])
-#   y=y+1
-# }
-# }
-# 
-# 
-# x <- central_byDayTimeRoad[[3]][[12]][[which(roadBreaks == "I-95S")]]
-# 
-
-str(data_by_time)
+# set to chunks of every three milemarkers
 data_by_time$Milemarker.Nbr <- cut_width(data_by_time$Milemarker.Nbr,width = 3, boundary = 0)
 
+
+#data table-- just counts of segment types
 data_by_segment_type <- data_central %>%
   count(#Milemarker.Nbr,
-       # day,
-       # CreatedIncrements,
-        Segment.Type)
+    # day,
+    # CreatedIncrements,
+    Segment.Type)
 
-data_mon <- data_by_time %>%
+#data table-- counts of accidents given day, time, route, and milemarker
+data_by_milemarker <- data_by_time %>%
   count(Milemarker.Nbr,
-        day = "Monday",
-        CreatedIncrements)
-data_mon$prob <- data_mon$n/sum(data_mon$n)
-data_mon
+        day,
+        CreatedIncrements,
+        Route.Nm)
 
-# hi
+#find the probabilities and add back appropriate columns
+data_probabilities <- as.data.table(data_by_milemarker)[ , list( prob = n/sum(n) ), by = list(day, CreatedIncrements)  ]
+data_probabilities$Milemarker.Nbr <- data_by_milemarker$Milemarker.Nbr
+data_probabilities$Route.Nm <- data_by_milemarker$Route.Nm
+data_probabilities
+
+prob_final <- data_probabilities[with(data_probabilities, order(day, CreatedIncrements, -prob)),]
