@@ -6,6 +6,10 @@ library(shiny)
 library(lubridate)
 library(data.table)
 library(dplyr)
+library(mapproj)
+library(DeducerSpatial)
+require(maps)
+
 
 
 #set wd, load and fortify traffic data
@@ -51,7 +55,7 @@ data_by_time$day <- weekdays(as.Date(data_by_time$Created.Dt))
 data_by_time <- data_by_time[(data_by_time$Segment.Type == c("Interstate", "Primary")), ]
 
 # set to chunks of every three milemarkers
-data_by_time$Milemarker.Nbr <- cut_width(data_by_time$Milemarker.Nbr,width = 3, boundary = 0)
+data_by_time$Milemarker.Binned <- cut_width(data_by_time$Milemarker.Nbr,width = 3, boundary = 0)
 
 
 #data table-- just counts of segment types
@@ -64,14 +68,20 @@ data_by_segment_type <- data_central %>%
 #data table-- counts of accidents given day, time, route, and milemarker
 data_by_milemarker <- data_by_time %>%
   count(Milemarker.Nbr,
+        Milemarker.Binned,
         day,
         CreatedIncrements,
         Route.Nm)
+
+write.csv(data_probabilities, "data3.csv")
 
 #find the probabilities and add back appropriate columns
 data_probabilities <- as.data.table(data_by_milemarker)[ , list( prob = n/sum(n) ), by = list(day, CreatedIncrements)  ]
 data_probabilities$Milemarker.Nbr <- data_by_milemarker$Milemarker.Nbr
 data_probabilities$Route.Nm <- data_by_milemarker$Route.Nm
+data_probabilities$Lat <- data_by_time$Latitude
+data_probabilities$Lon <- data_by_time$Longitude
 data_probabilities
 
 prob_final <- data_probabilities[with(data_probabilities, order(day, CreatedIncrements, -prob)),]
+
